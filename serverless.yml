@@ -1,0 +1,76 @@
+service: test-task-node
+frameworkVersion: "3"
+
+custom:
+  splitStacks:
+    perFunction: false
+    perType: false
+    perGroupFunction: true
+    nestedStackCount: 10
+
+  NODE_ENV: dev
+  MONGO_DB_URL: mongodb://localhost:27017/WeatherApp
+
+  serverless-offline:
+    httpPort: 3003
+  serverless-offline-watcher:
+    - path:
+        - src/**/*.js
+      command: echo "js file in function folder was modified!"
+
+provider:
+  name: aws
+  region: eu-north-1
+  runtime: nodejs20.x
+  stage: dev
+  lambdaHashingVersion: 20201221
+  versionFunctions: false
+  environment:
+    MONGO_DB_URL: mongodb://localhost:27017/WeatherApp
+    OPENWEATHER_API_KEY: 3e678eb08a1805f1dde9dbb666dbaa42
+    WEATHERAPI_API_KEY: 1cc87ae5261546aa90b61118242511
+    WEATHERSTACK_API_KEY: 52b1d5eb942f513652a704b354d8a202
+
+plugins:
+  - serverless-offline
+  - serverless-offline-watcher
+  - serverless-plugin-split-stacks
+  - serverless-dotenv-plugin
+
+functions:
+  testApi:
+    timeout: 30 # With cold starts this endpoint can be slow
+    memorySize: 512 # default is 1024
+    handler: src/functions/test.handler
+    reservedConcurrency: 4
+    events:
+      - http:
+          path: "/test"
+          method: get
+          cors:
+            origin: '*'
+            allowCredentials: false
+
+  getWeather:
+    timeout: 30
+    memorySize: 512
+    handler: src/functions/getWeather.handler
+    events:
+      - http:
+          path: "/api/weather"
+          method: get
+          cors:
+            origin: '*'
+            allowCredentials: false
+
+  togglePin:
+    timeout: 10
+    memorySize: 256
+    handler: src/functions/togglePin.handler
+    events:
+      - http:
+          path: "/api/weather/togglePin"
+          method: post
+          cors:
+            origin: '*'
+            allowCredentials: false
